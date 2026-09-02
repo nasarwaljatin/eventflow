@@ -10,6 +10,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 import { eventSessionRouter, sessionRouter } from './routes/session.routes.js';
 import registrationRouter from './routes/registration.routes.js';
+import meRouter from './routes/me.routes.js';
 import { startExpirationJob } from './utils/jobs.js';
 
 dotenv.config();
@@ -34,6 +35,7 @@ app.use('/api/events', eventRouter);
 app.use('/api/events/:eventId/sessions', eventSessionRouter);
 app.use('/api/sessions', sessionRouter);
 app.use('/api/registrations', registrationRouter);
+app.use('/api/me', meRouter);
 
 app.use(errorHandler);
 

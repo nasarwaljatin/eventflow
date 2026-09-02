@@ -153,3 +153,82 @@ export const deleteSession = async (req: Request, res: Response, next: NextFunct
     next(error);
   }
 };
+
+export const assignStaff = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: sessionId } = req.params;
+    const { userId } = req.body;
+    
+    if (!req.user) {
+      throw new AppError('Authentication required', 401);
+    }
+
+    const session = await prisma.session.findUnique({ where: { id: sessionId } });
+    if (!session) {
+      throw new AppError('Session not found', 404);
+    }
+    
+    const staffUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!staffUser || staffUser.role !== 'CHECK_IN_STAFF') {
+      throw new AppError('User is not check-in staff', 400);
+    }
+    
+    const existing = await prisma.sessionStaff.findUnique({
+      where: { sessionId_userId: { sessionId, userId } }
+    });
+    
+    if (existing) {
+      return res.status(409).json({ success: false, error: 'Staff already assigned to this session' });
+    }
+
+    const assignment = await prisma.sessionStaff.create({
+      data: {
+        sessionId,
+        userId,
+        assignedById: req.user.userId
+      }
+    });
+
+    res.status(201).json({ success: true, data: assignment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeStaff = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: sessionId, userId } = req.params;
+    
+    const existing = await prisma.sessionStaff.findUnique({
+      where: { sessionId_userId: { sessionId, userId } }
+    });
+    
+    if (!existing) {
+      throw new AppError('Staff assignment not found', 404);
+    }
+
+    await prisma.sessionStaff.delete({
+      where: { sessionId_userId: { sessionId, userId } }
+    });
+
+    res.json({ success: true, data: { message: 'Staff removed successfully' } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listStaff = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: sessionId } = req.params;
+    
+    const staff = await prisma.sessionStaff.findMany({
+      where: { sessionId },
+      include: { user: { select: { id: true, fullName: true, email: true } } }
+    });
+
+    res.json({ success: true, data: staff });
+  } catch (error) {
+    next(error);
+  }
+};
+

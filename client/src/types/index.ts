@@ -66,6 +66,45 @@ export interface AuthResponse {
   accessToken: string;
 }
 
+export interface RegistrationFilters {
+  search?: string;
+  event?: string;
+  session?: string;
+  status?: string;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ImportResult {
+  row: number;
+  status: 'created' | 'duplicate' | 'rejected';
+  reason?: string;
+  name?: string;
+  email?: string;
+}
+
+export interface ImportResponse {
+  summary: {
+    total: number;
+    created: number;
+    duplicates: number;
+    rejected: number;
+  };
+  rows: ImportResult[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

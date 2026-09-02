@@ -119,3 +119,227 @@ export const updateRegistrationStatus = (targetStatus: 'confirmed' | 'checkedIn'
 export const confirmRegistration = updateRegistrationStatus('confirmed');
 export const checkInRegistration = updateRegistrationStatus('checkedIn');
 export const cancelRegistration = updateRegistrationStatus('cancelled');
+
+export const findRegistrations = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { search, event, session, status, sort, order = 'desc', page = '1', limit = '25' } = req.query;
+    const user = req.user!;
+    
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { attendeeName: { contains: search as string, mode: 'insensitive' } },
+        { attendeeEmail: { contains: search as string, mode: 'insensitive' } }
+      ];
+    }
+
+    if (status) where.status = status;
+    if (session) where.sessionId = session;
+    if (event) where.session = { eventId: event };
+
+    if (user.role === 'CHECK_IN_STAFF') {
+      const assigned = await prisma.sessionStaff.findMany({
+        where: { userId: user.userId },
+        select: { sessionId: true }
+      });
+      const assignedIds = assigned.map((a: any) => a.sessionId);
+      
+      if (where.sessionId) {
+        if (!assignedIds.includes(where.sessionId as string)) {
+           return res.json({ success: true, data: [], meta: { page: 1, limit: 1, total: 0, totalPages: 0 } });
+        }
+      } else {
+        where.sessionId = { in: assignedIds };
+      }
+    }
+
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    let orderBy: any = {};
+    if (sort) {
+      // Handle mapping from camelCase/snake_case
+      const sortField = sort === 'reserved_at' ? 'reservedAt' : 
+                        sort === 'attendee_name' ? 'attendeeName' : sort;
+      orderBy[sortField as string] = order;
+    } else {
+       orderBy.reservedAt = order;
+    }
+
+    const [data, total] = await Promise.all([
+      prisma.registration.findMany({
+        where,
+        include: { session: { include: { event: true } } },
+        orderBy,
+        skip,
+        take: limitNum
+      }),
+      prisma.registration.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      data,
+      meta: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const exportRegistrationsCSV = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: sessionId } = req.params;
+    
+    const registrations = await prisma.registration.findMany({
+      where: { sessionId },
+      orderBy: { attendeeName: 'asc' }
+    });
+
+    const header = ['name', 'email', 'status', 'reserved_at', 'confirmed_at', 'checked_in_at'].join(',');
+    const rows = registrations.map(r => {
+      return [
+        `"${r.attendeeName.replace(/"/g, '""')}"`,
+        `"${r.attendeeEmail.replace(/"/g, '""')}"`,
+        r.status,
+        r.reservedAt ? r.reservedAt.toISOString() : '',
+        r.confirmedAt ? r.confirmedAt.toISOString() : '',
+        r.checkedInAt ? r.checkedInAt.toISOString() : ''
+      ].join(',');
+    });
+
+    const csv = [header, ...rows].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="checkin-sheet-${sessionId}.csv"`);
+    res.send(csv);
+  } catch (error) {
+    next(error);
+  }
+};
+
+import { parse } from 'csv-parse/sync';
+
+export const importRegistrations = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: sessionId } = req.params;
+    
+    if (!req.file) {
+      throw new AppError('No CSV file uploaded', 400);
+    }
+    
+    const csvContent = req.file.buffer.toString('utf-8');
+    
+    let records;
+    try {
+      records = parse(csvContent, { columns: true, skip_empty_lines: true });
+    } catch (err) {
+      throw new AppError('Invalid CSV format', 400);
+    }
+    
+    const results = [];
+    let createdCount = 0;
+    let duplicateCount = 0;
+    let rejectedCount = 0;
+    let rowNumber = 1;
+
+    // We can't use the atomic capacity check cleanly in a loop without repeating it.
+    // However, the instructions state: "Check capacity (per-row, within transaction for safety)".
+    // So we can extract the atomic creation to a helper or just do it.
+
+    for (const record of records) {
+      const row: any = record;
+      rowNumber++; // starting from 2 assuming 1 is header
+      const name = row.name || row.attendee_name || row.attendeeName;
+      const email = row.email || row.attendee_email || row.attendeeEmail;
+      
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      
+      if (!email || !emailRegex.test(email)) {
+        results.push({ row: rowNumber, status: 'rejected', reason: 'Invalid email format', data: row });
+        rejectedCount++;
+        continue;
+      }
+      
+      if (!name?.trim()) {
+        results.push({ row: rowNumber, status: 'rejected', reason: 'Name is required', data: row });
+        rejectedCount++;
+        continue;
+      }
+
+      const existing = await prisma.registration.findFirst({
+        where: {
+          sessionId,
+          attendeeEmail: email.toLowerCase().trim(),
+          status: { in: ['reserved', 'confirmed', 'checked_in', 'checked-in'] }
+        }
+      });
+
+      if (existing) {
+        results.push({ row: rowNumber, status: 'duplicate', reason: 'Already registered for this session', data: row });
+        duplicateCount++;
+        continue;
+      }
+
+      try {
+        const registration = await prisma.$transaction(async (tx: any) => {
+          const sessionList = await tx.$queryRaw<any[]>`SELECT id, capacity FROM sessions WHERE id = ${sessionId}::uuid FOR UPDATE;`;
+          if (sessionList.length === 0) throw new Error('Session not found');
+          const session = sessionList[0];
+
+          const activeCountList = await tx.$queryRaw<any[]>`
+            SELECT COUNT(*)::int as count FROM registrations 
+            WHERE "sessionId" = ${sessionId}::uuid AND status NOT IN ('cancelled', 'expired');
+          `;
+          const activeCount = activeCountList[0].count;
+
+          if (activeCount >= session.capacity) {
+            throw new Error('CAPACITY_FULL');
+          }
+
+          return await tx.registration.create({
+            data: {
+              sessionId,
+              attendeeName: name.trim(),
+              attendeeEmail: email.toLowerCase().trim(),
+              status: 'reserved',
+              createdById: req.user?.userId
+            }
+          });
+        });
+        
+        results.push({ row: rowNumber, status: 'created', registrationId: registration.id, data: row });
+        createdCount++;
+      } catch (error: any) {
+        if (error.message === 'CAPACITY_FULL') {
+          results.push({ row: rowNumber, status: 'rejected', reason: 'Session at full capacity', data: row });
+          rejectedCount++;
+        } else {
+          results.push({ row: rowNumber, status: 'rejected', reason: 'Unexpected error: ' + error.message, data: row });
+          rejectedCount++;
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        summary: { total: records.length, created: createdCount, duplicates: duplicateCount, rejected: rejectedCount },
+        rows: results
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
