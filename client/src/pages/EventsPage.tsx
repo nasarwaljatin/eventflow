@@ -4,8 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getEvents } from '../api/events';
 import { useAuth } from '../hooks/useAuth';
 import { format } from 'date-fns';
-import { Plus } from 'lucide-react';
+import { Plus, CalendarX } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { Spinner, EmptyState } from '../components/ui/Feedback';
 
 export default function EventsPage() {
   const { user } = useAuth();
@@ -44,11 +45,13 @@ export default function EventsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-slate-500">Loading events...</div>
+        <Spinner size={32} className="py-12" />
       ) : events?.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-          <p className="text-slate-500">No events found.</p>
-        </div>
+        <EmptyState 
+          title="No events found" 
+          description="There are currently no events matching your criteria."
+          icon={<CalendarX size={48} />}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {events?.map((event) => (

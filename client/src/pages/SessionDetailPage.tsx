@@ -11,6 +11,8 @@ import { cn } from '../lib/utils';
 import { getSessionStaff, assignStaff, removeStaff, importRegistrations, downloadCheckInSheet } from '../api/sessions';
 import { getUsersByRole } from '../api/users';
 import { ImportResult } from '../types';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Spinner, EmptyState } from '../components/ui/Feedback';
 
 
 const CountdownTimer = ({ reservedAt }: { reservedAt: string }) => {
@@ -78,6 +80,7 @@ export default function SessionDetailPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importResults, setImportResults] = useState<{ summary: any, rows: ImportResult[] } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteSession(eventId!, sessionId!),
@@ -203,11 +206,7 @@ export default function SessionDetailPage() {
                   <Edit size={16} /> Edit
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirm('Are you sure you want to delete this session?')) {
-                      deleteMutation.mutate();
-                    }
-                  }}
+                  onClick={() => setIsDeleteDialogOpen(true)}
                   className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700"
                 >
                   <Trash2 size={16} /> Delete
@@ -217,6 +216,17 @@ export default function SessionDetailPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Delete Session"
+        description="Are you sure you want to delete this session? This action cannot be undone and will cancel all registrations."
+        confirmText="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -265,11 +275,13 @@ export default function SessionDetailPage() {
         
         {activeTab === 'registrations' ? (
           isRegistrationsLoading ? (
-            <div className="text-center py-8">Loading registrations...</div>
+            <Spinner size={32} className="py-12" />
           ) : !registrations?.length ? (
-            <div className="py-8 text-center text-slate-500">
-              No registrations yet.
-            </div>
+            <EmptyState 
+              title="No registrations yet" 
+              description="There are currently no registrations for this session."
+              icon={<UsersIcon size={48} />}
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">

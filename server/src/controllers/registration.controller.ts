@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { checkAndTriggerAlert } from '../lib/alerts.js';
+import { isValidTransition } from '../lib/stateMachine.js';
 
 export const createRegistration = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -82,18 +83,8 @@ export const updateRegistrationStatus = (targetStatus: 'confirmed' | 'checkedIn'
         const reg = regList[0];
 
         // State machine validation
-        if (targetStatus === 'confirmed') {
-          if (reg.status !== 'reserved') {
-            throw new AppError('Only reserved registrations can be confirmed', 400);
-          }
-        } else if (targetStatus === 'checkedIn') {
-          if (reg.status !== 'confirmed' && reg.status !== 'reserved') {
-            throw new AppError('Cannot check-in a cancelled or expired registration', 400);
-          }
-        } else if (targetStatus === 'cancelled') {
-          if (reg.status === 'cancelled' || reg.status === 'expired') {
-            throw new AppError('Registration is already cancelled or expired', 400);
-          }
+        if (!isValidTransition(reg.status, targetStatus)) {
+          throw new AppError(`Cannot transition from ${reg.status} to ${targetStatus}`, 400);
         }
 
         const updates: any = { status: targetStatus === 'checkedIn' ? 'checked-in' : targetStatus };
