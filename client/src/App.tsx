@@ -13,6 +13,10 @@ import EventsPage from './pages/EventsPage';
 import CreateEventPage from './pages/CreateEventPage';
 import EditEventPage from './pages/EditEventPage';
 import EventDetailPage from './pages/EventDetailPage';
+import CreateSessionPage from './pages/CreateSessionPage';
+import EditSessionPage from './pages/EditSessionPage';
+import SessionDetailPage from './pages/SessionDetailPage';
+import SessionRegisterPage from './pages/SessionRegisterPage';
 
 const queryClient = new QueryClient();
 
@@ -31,10 +35,14 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
+              <Route path="/events/:id/sessions/:sid" element={<SessionDetailPage />} />
+              <Route path="/events/:id/sessions/:sid/register" element={<SessionRegisterPage />} />
               
               <Route element={<RoleGuard allowedRoles={['ORGANIZER']} />}>
                 <Route path="/events/new" element={<CreateEventPage />} />
                 <Route path="/events/:id/edit" element={<EditEventPage />} />
+                <Route path="/events/:id/sessions/new" element={<CreateSessionPage />} />
+                <Route path="/events/:id/sessions/:sid/edit" element={<EditSessionPage />} />
               </Route>
             </Route>
           </Routes>
@@ -45,3 +53,4 @@ function App() {
 }
 
 export default App;
+

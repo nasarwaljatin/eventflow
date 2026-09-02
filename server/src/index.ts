@@ -8,6 +8,10 @@ import authRouter from './routes/auth.routes.js';
 import eventRouter from './routes/event.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
+import { eventSessionRouter, sessionRouter } from './routes/session.routes.js';
+import registrationRouter from './routes/registration.routes.js';
+import { startExpirationJob } from './utils/jobs.js';
+
 dotenv.config();
 
 const app = express();
@@ -27,6 +31,9 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/events', eventRouter);
+app.use('/api/events/:eventId/sessions', eventSessionRouter);
+app.use('/api/sessions', sessionRouter);
+app.use('/api/registrations', registrationRouter);
 
 app.use(errorHandler);
 
@@ -34,4 +41,5 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startExpirationJob();
 });

@@ -24,6 +24,7 @@ model User {
   updatedAt    DateTime       @updatedAt
   events       Event[]
   refreshTokens RefreshToken[]
+  registrationsCreated Registration[]
 
   @@map("users")
 }
@@ -40,8 +41,51 @@ model Event {
   createdBy   User     @relation(fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  sessions    Session[]
 
   @@map("events")
+}
+
+model Session {
+  id          String         @id @default(uuid()) @db.Uuid
+  eventId     String         @db.Uuid
+  event       Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  title       String
+  startTime   DateTime
+  durationMin Int
+  location    String
+  capacity    Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  registrations Registration[]
+
+  @@index([eventId])
+  @@index([startTime])
+  @@map("sessions")
+}
+
+model Registration {
+  id             String    @id @default(uuid()) @db.Uuid
+  sessionId      String    @db.Uuid
+  session        Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  attendeeName   String
+  attendeeEmail  String
+  status         String    @default("reserved")
+  reservedAt     DateTime  @default(now())
+  confirmedAt    DateTime?
+  checkedInAt    DateTime?
+  cancelledAt    DateTime?
+  expiredAt      DateTime?
+  createdById    String?   @db.Uuid
+  createdBy      User?     @relation(fields: [createdById], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([sessionId])
+  @@index([status])
+  @@index([attendeeEmail])
+  @@index([reservedAt])
+  @@map("registrations")
 }
 
 model RefreshToken {

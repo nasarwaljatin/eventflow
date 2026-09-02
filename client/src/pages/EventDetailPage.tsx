@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getEventById, toggleArchive } from '../api/events';
+import { getSessionsByEvent } from '../api/sessions';
 import { useAuth } from '../hooks/useAuth';
 import { format } from 'date-fns';
-import { Edit, Archive, RefreshCw } from 'lucide-react';
+import { Edit, Archive, RefreshCw, Plus, Clock, MapPin, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '../lib/utils';
 
@@ -13,9 +14,15 @@ export default function EventDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: event, isLoading } = useQuery({
+  const { data: event, isLoading: isEventLoading } = useQuery({
     queryKey: ['event', id],
     queryFn: () => getEventById(id!),
+    enabled: !!id,
+  });
+
+  const { data: sessions, isLoading: isSessionsLoading } = useQuery({
+    queryKey: ['sessions', id],
+    queryFn: () => getSessionsByEvent(id!),
     enabled: !!id,
   });
 
@@ -29,7 +36,7 @@ export default function EventDetailPage() {
     onError: () => toast.error('Action failed'),
   });
 
-  if (isLoading) return <div className="text-center py-12">Loading...</div>;
+  if (isEventLoading) return <div className="text-center py-12">Loading...</div>;
   if (!event) return <div className="text-center py-12">Event not found</div>;
 
   return (
@@ -96,10 +103,64 @@ export default function EventDetailPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">Sessions</h2>
-        <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
-          <p className="text-slate-500">Sessions will be added in Phase 2</p>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-slate-900">Sessions</h2>
+          {user?.role === 'ORGANIZER' && (
+            <button
+              onClick={() => navigate(`/events/${event.id}/sessions/new`)}
+              className="inline-flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              <Plus size={16} /> Add Session
+            </button>
+          )}
         </div>
+        
+        {isSessionsLoading ? (
+          <div className="text-center py-8">Loading sessions...</div>
+        ) : !sessions?.length ? (
+          <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
+            <p className="text-slate-500">No sessions available.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sessions.map((session) => {
+              const activeCount = session.activeRegistrationsCount ?? 0;
+              const percentFull = Math.min(100, Math.round((activeCount / session.capacity) * 100));
+              let barColor = 'bg-green-500';
+              if (percentFull >= 90) barColor = 'bg-red-500';
+              else if (percentFull >= 70) barColor = 'bg-yellow-500';
+
+              return (
+                <div key={session.id} className="border border-slate-200 rounded-lg p-4 hover:border-primary-300 transition-colors">
+                  <div className="flex justify-between items-start mb-2">
+                    <Link to={`/events/${event.id}/sessions/${session.id}`} className="text-lg font-semibold text-primary-600 hover:underline">
+                      {session.title}
+                    </Link>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Clock size={16} />
+                      {format(new Date(session.startTime), 'PPp')} ({session.durationMinutes}m)
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={16} />
+                      {session.location}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users size={16} />
+                      {activeCount} / {session.capacity} Registered
+                    </div>
+                  </div>
+
+                  <div className="w-full bg-slate-200 rounded-full h-2.5">
+                    <div className={cn("h-2.5 rounded-full transition-all", barColor)} style={{ width: `${percentFull}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
