@@ -110,3 +110,65 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+export interface DashboardMetrics {
+  headlines: {
+    sessionsToday: number;
+    checkedInToday: number;
+    expiredThisWeek: number;
+    sessionsAtCapacity: number;
+  };
+  statusBreakdown: {
+    status: string;
+    count: number;
+  }[];
+  registrationsBySession: {
+    sessionId: string;
+    title: string;
+    count: number;
+    capacity: number;
+  }[];
+  checkinsPerDay: {
+    date: string;
+    count: number;
+  }[];
+}
+
+export interface TimelineEntry {
+  id: string;
+  registrationId: string;
+  action: string;
+  oldStatus?: string | null;
+  newStatus?: string | null;
+  note?: string | null;
+  performedByUserId?: string | null;
+  performedAt: string;
+  performedBy?: {
+    id: string;
+    fullName: string;
+  } | null;
+}
+
+export interface Alert {
+  id: string;
+  sessionId: string;
+  isDismissed: boolean;
+  dismissedBy?: string | null;
+  dismissedAt?: string | null;
+  triggeredAt: string;
+  session?: {
+    id: string;
+    title: string;
+    eventId: string;
+    event?: {
+      id: string;
+      name: string;
+    };
+    activeRegistrationsCount?: number;
+    capacity?: number;
+  };
+}
+
+export interface AlertCount {
+  count: number;
+}

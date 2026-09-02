@@ -8,6 +8,7 @@ import { RegistrationFilters, Registration } from '../types';
 import { Search, ChevronLeft, ChevronRight, Check, X, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { RegistrationDetailModal } from '../components/RegistrationDetailModal';
 
 export default function RegistrationsPage() {
   const queryClient = useQueryClient();
@@ -20,6 +21,8 @@ export default function RegistrationsPage() {
     order: 'desc',
     sort: 'reserved_at'
   });
+
+  const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
 
   useEffect(() => {
     setFilters(f => ({ ...f, search: debouncedSearch, page: 1 }));
@@ -160,7 +163,7 @@ export default function RegistrationsPage() {
                 </tr>
               ) : (
                 response?.data.map((reg: Registration) => (
-                  <tr key={reg.id}>
+                  <tr key={reg.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedRegistration(reg)}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                       {reg.attendeeName}
                     </td>
@@ -179,7 +182,7 @@ export default function RegistrationsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {format(new Date(reg.reservedAt), 'MMM d, h:mm a')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2" onClick={(e) => e.stopPropagation()}>
                       {reg.status === 'reserved' && (
                         <button
                           onClick={() => confirmMutation.mutate(reg.id)}
@@ -250,6 +253,13 @@ export default function RegistrationsPage() {
           </div>
         )}
       </div>
+      
+      {selectedRegistration && (
+        <RegistrationDetailModal 
+          registration={selectedRegistration} 
+          onClose={() => setSelectedRegistration(null)} 
+        />
+      )}
     </div>
   );
 }

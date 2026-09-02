@@ -2,15 +2,25 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Calendar, ClipboardList, Bell, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { getAlertCount } from '../../api/alerts';
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean, setSidebarOpen: (o: boolean) => void }) {
   const { user } = useAuth();
+
+  const { data: alertCountData } = useQuery({
+    queryKey: ['alertCount'],
+    queryFn: getAlertCount,
+    refetchInterval: 30000,
+  });
+
+  const alertCount = alertCountData?.count || 0;
 
   const links = [
     { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
     { name: 'Events', to: '/events', icon: Calendar },
     { name: 'Registrations', to: '/registrations', icon: ClipboardList },
-    { name: 'Alerts', to: '/alerts', icon: Bell },
+    { name: 'Alerts', to: '/alerts', icon: Bell, badge: alertCount > 0 ? alertCount : undefined },
   ];
 
   if (user?.role === 'CHECK_IN_STAFF') {
@@ -35,13 +45,20 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: { sidebarOpen: 
                 key={link.name}
                 to={link.to}
                 className={({ isActive }) =>
-                  cn("flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                  cn("flex flex-1 items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-colors",
                     isActive ? "bg-primary-50 text-primary-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900")
                 }
                 onClick={() => setSidebarOpen(false)}
               >
-                <Icon size={20} className="mr-3" />
-                {link.name}
+                <div className="flex items-center">
+                  <Icon size={20} className="mr-3" />
+                  {link.name}
+                </div>
+                {link.badge !== undefined && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {link.badge}
+                  </span>
+                )}
               </NavLink>
             );
           })}

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { checkAndTriggerAlert } from '../lib/alerts.js';
 
 export const createRegistration = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -343,3 +344,52 @@ export const importRegistrations = async (req: Request, res: Response, next: Nex
 
 
 
+
+
+export const addStaffNote = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+    const user = req.user!;
+
+    if (!note) {
+      throw new AppError('Note content is required', 400);
+    }
+
+    const reg = await prisma.registration.findUnique({ where: { id } });
+    if (!reg) {
+      throw new AppError('Registration not found', 404);
+    }
+
+    const newNote = await prisma.auditLog.create({
+      data: {
+        registrationId: id,
+        action: 'note_added',
+        note,
+        performedById: user.userId
+      }
+    });
+
+    res.status(201).json({ success: true, data: newNote });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTimeline = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    
+    const logs = await prisma.auditLog.findMany({
+      where: { registrationId: id },
+      include: {
+        performedBy: { select: { id: true, fullName: true, email: true } }
+      },
+      orderBy: { performedAt: 'desc' }
+    });
+
+    res.json({ success: true, data: logs });
+  } catch (error) {
+    next(error);
+  }
+};

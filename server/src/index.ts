@@ -30,12 +30,17 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is healthy' });
 });
 
+import dashboardRouter from './routes/dashboard.routes.js';
+import alertRouter from './routes/alert.routes.js';
+
 app.use('/api/auth', authRouter);
 app.use('/api/events', eventRouter);
 app.use('/api/events/:eventId/sessions', eventSessionRouter);
 app.use('/api/sessions', sessionRouter);
 app.use('/api/registrations', registrationRouter);
 app.use('/api/me', meRouter);
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/alerts', alertRouter);
 
 app.use(errorHandler);
 

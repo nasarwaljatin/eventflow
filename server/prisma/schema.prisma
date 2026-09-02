@@ -27,6 +27,8 @@ model User {
   registrationsCreated Registration[]
   assignedToSessions SessionStaff[] @relation("assignedTo")
   assignedStaff      SessionStaff[] @relation("assignedBy")
+  auditLogsPerformed AuditLog[]     @relation("performedBy")
+  alertsDismissed    CapacityAlert[] @relation("dismissedBy")
 
   @@map("users")
 }
@@ -61,6 +63,7 @@ model Session {
   updatedAt   DateTime       @updatedAt
   registrations Registration[]
   staff       SessionStaff[]
+  capacityAlert CapacityAlert?
 
   @@index([eventId])
   @@index([startTime])
@@ -83,23 +86,13 @@ model Registration {
   createdBy      User?     @relation(fields: [createdById], references: [id])
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  auditLogs      AuditLog[]
 
   @@index([sessionId])
   @@index([status])
   @@index([attendeeEmail])
   @@index([reservedAt])
   @@map("registrations")
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid()) @db.Uuid
-  token     String   @unique
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@map("refresh_tokens")
 }
 
 model SessionStaff {
@@ -115,4 +108,48 @@ model SessionStaff {
 
   @@unique([sessionId, userId])
   @@map("session_staff")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id             String       @id @default(uuid()) @db.Uuid
+  registrationId String       @db.Uuid
+  action         String       @db.VarChar(50)
+  oldStatus      String?      @db.VarChar(20)
+  newStatus      String?      @db.VarChar(20)
+  note           String?      @db.Text
+  performedById  String?      @db.Uuid
+  performedAt    DateTime     @default(now())
+
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  performedBy    User?        @relation(name: "performedBy", fields: [performedById], references: [id])
+
+  @@index([registrationId])
+  @@index([performedAt])
+  @@map("audit_log")
+}
+
+model CapacityAlert {
+  id           String    @id @default(uuid()) @db.Uuid
+  sessionId    String    @unique @db.Uuid
+  isDismissed  Boolean   @default(false)
+  dismissedById String?  @db.Uuid
+  dismissedAt  DateTime?
+  triggeredAt  DateTime  @default(now())
+
+  session      Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  dismissedBy  User?     @relation(name: "dismissedBy", fields: [dismissedById], references: [id])
+
+  @@index([isDismissed])
+  @@map("capacity_alerts")
 }

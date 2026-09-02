@@ -19,6 +19,8 @@ import SessionDetailPage from './pages/SessionDetailPage';
 import SessionRegisterPage from './pages/SessionRegisterPage';
 import MySessionsPage from './pages/MySessionsPage';
 import RegistrationsPage from './pages/RegistrationsPage';
+import AlertsPage from './pages/AlertsPage';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -39,6 +41,7 @@ function App() {
               <Route path="/events/:id/sessions/:sid" element={<SessionDetailPage />} />
               <Route path="/events/:id/sessions/:sid/register" element={<SessionRegisterPage />} />
               <Route path="/registrations" element={<RegistrationsPage />} />
+              <Route path="/alerts" element={<AlertsPage />} />
               
               <Route element={<RoleGuard allowedRoles={['CHECK_IN_STAFF']} />}>
                 <Route path="/my-sessions" element={<MySessionsPage />} />

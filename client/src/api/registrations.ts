@@ -36,3 +36,12 @@ export const getAllRegistrations = async (filters: import('../types').Registrati
   const { data } = await api.get(`/registrations?${params.toString()}`);
   return data; // Return full response with data and meta
 };
+
+export const getRegistrationTimeline = async (id: string): Promise<import('../types').TimelineEntry[]> => {
+  const { data } = await api.get(`/registrations/${id}/timeline`);
+  return data.data;
+};
+
+export const addRegistrationNote = async (id: string, note: string): Promise<void> => {
+  await api.post(`/registrations/${id}/notes`, { note });
+};
