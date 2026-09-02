@@ -9,7 +9,11 @@ const schema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(6),
+  confirmPassword: z.string().min(6),
   role: z.enum(['ORGANIZER', 'CHECK_IN_STAFF']),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword']
 });
 
 type FormData = z.infer<typeof schema>;
@@ -61,6 +65,14 @@ export default function RegisterPage() {
               <div className="mt-1">
                 <input {...register('password')} type="password" className="block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm" />
                 {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Confirm Password</label>
+              <div className="mt-1">
+                <input {...register('confirmPassword')} type="password" className="block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm" />
+                {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>}
               </div>
             </div>
 
