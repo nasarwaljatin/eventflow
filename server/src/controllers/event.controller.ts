@@ -12,7 +12,8 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
         ...req.body,
         startDate: new Date(req.body.startDate),
         endDate: new Date(req.body.endDate),
-        createdById: req.user.userId
+        createdById: req.user.userId,
+        approvalStatus: 'PENDING'
       }
     });
     
@@ -25,9 +26,27 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
 export const getEvents = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const includeArchived = req.query.includeArchived === 'true';
+    const user = req.user!;
+    
+    const where: any = {};
+    if (!includeArchived) {
+      where.isArchived = false;
+    }
+    
+    // Admin sees all events; organizers see approved + their own; staff sees only approved
+    if (user.role === 'ADMIN') {
+      // No additional filter
+    } else if (user.role === 'ORGANIZER') {
+      where.OR = [
+        { approvalStatus: 'APPROVED' },
+        { createdById: user.userId }
+      ];
+    } else {
+      where.approvalStatus = 'APPROVED';
+    }
     
     const events = await prisma.event.findMany({
-      where: includeArchived ? undefined : { isArchived: false },
+      where,
       orderBy: { startDate: 'asc' }
     });
     

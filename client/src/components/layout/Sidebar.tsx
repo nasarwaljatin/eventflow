@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, ClipboardList, Bell, X } from 'lucide-react';
+import { LayoutDashboard, Calendar, ClipboardList, Bell, X, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import { useQuery } from '@tanstack/react-query';
@@ -25,6 +25,10 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: { sidebarOpen: 
 
   if (user?.role === 'CHECK_IN_STAFF') {
     links.push({ name: 'My Sessions', to: '/my-sessions', icon: Calendar });
+  }
+
+  if (user?.role === 'ADMIN') {
+    links.push({ name: 'Admin Panel', to: '/admin', icon: Shield });
   }
 
   return (

@@ -62,12 +62,22 @@ export default function EventsPage() {
             >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-slate-900 line-clamp-1">{event.name}</h3>
-                <span className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  event.isArchived ? "bg-slate-100 text-slate-800" : "bg-green-100 text-green-800"
-                )}>
-                  {event.isArchived ? 'Archived' : 'Active'}
-                </span>
+                <div className="flex gap-1.5">
+                  <span className={cn(
+                    "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                    event.isArchived ? "bg-slate-100 text-slate-800" : "bg-green-100 text-green-800"
+                  )}>
+                    {event.isArchived ? 'Archived' : 'Active'}
+                  </span>
+                  {event.approvalStatus && event.approvalStatus !== 'APPROVED' && (
+                    <span className={cn(
+                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                      event.approvalStatus === 'PENDING' ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"
+                    )}>
+                      {event.approvalStatus}
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-sm text-slate-500 mb-4 line-clamp-2">{event.description}</p>
               <div className="space-y-2 text-sm text-slate-600">

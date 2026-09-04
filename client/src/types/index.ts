@@ -2,7 +2,8 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
-  role: 'ORGANIZER' | 'CHECK_IN_STAFF';
+  role: 'ORGANIZER' | 'CHECK_IN_STAFF' | 'ADMIN';
+  authProvider?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -15,7 +16,11 @@ export interface Event {
   startDate: string;
   endDate: string;
   isArchived: boolean;
-  createdBy: string;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason?: string;
+  approvedAt?: string;
+  approvedBy?: { id: string; fullName: string; email: string };
+  createdBy: string | { id: string; fullName: string; email: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -171,4 +176,15 @@ export interface Alert {
 
 export interface AlertCount {
   count: number;
+}
+
+export interface AdminStats {
+  events: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  totalUsers: number;
+  totalRegistrations: number;
+  usersByRole: { role: string; count: number }[];
 }

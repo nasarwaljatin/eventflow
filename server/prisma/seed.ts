@@ -6,15 +6,11 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding demo data...');
 
-  await prisma.auditLog.deleteMany();
-  await prisma.capacityAlert.deleteMany();
-  await prisma.registration.deleteMany();
-  await prisma.sessionStaff.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.event.deleteMany();
-  await prisma.user.deleteMany();
+  // Use raw SQL to handle Supabase referential integrity
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE audit_log, capacity_alerts, registrations, session_staff, refresh_tokens, sessions, events, users CASCADE`);
 
   const passwordHash = await bcrypt.hash('Demo1234!', 12);
+  const adminPasswordHash = await bcrypt.hash('Admin1234!', 12);
 
   const organizer = await prisma.user.create({
     data: { email: 'organizer@demo.com', passwordHash, role: Role.ORGANIZER, fullName: 'Sarah Chen' },
@@ -26,6 +22,10 @@ async function main() {
 
   const staff2 = await prisma.user.create({
     data: { email: 'staff2@demo.com', passwordHash, role: Role.CHECK_IN_STAFF, fullName: 'Emily Davis' },
+  });
+
+  const admin = await prisma.user.create({
+    data: { email: 'admin@eventflow.com', passwordHash: adminPasswordHash, role: Role.ADMIN, fullName: 'System Admin' },
   });
 
   const today = new Date();
@@ -42,7 +42,8 @@ async function main() {
       venue: 'Grand Convention Center',
       startDate: today,
       endDate: addDays(today, 2),
-      createdById: organizer.id
+      createdById: organizer.id,
+      approvalStatus: 'APPROVED'
     }
   });
 
@@ -53,7 +54,8 @@ async function main() {
       venue: 'Creative Hub Studio',
       startDate: addDays(today, 7),
       endDate: addDays(today, 11),
-      createdById: organizer.id
+      createdById: organizer.id,
+      approvalStatus: 'APPROVED'
     }
   });
 
@@ -65,7 +67,8 @@ async function main() {
       startDate: addDays(today, -365),
       endDate: addDays(today, -363),
       isArchived: true,
-      createdById: organizer.id
+      createdById: organizer.id,
+      approvalStatus: 'APPROVED'
     }
   });
 

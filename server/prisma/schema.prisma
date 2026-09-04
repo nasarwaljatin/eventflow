@@ -11,15 +11,18 @@ datasource db {
 enum Role {
   ORGANIZER
   CHECK_IN_STAFF
+  ADMIN
 }
 
 model User {
   id           String         @id @default(uuid()) @db.Uuid
   email        String         @unique
-  passwordHash String
+  passwordHash String?
   fullName     String
   role         Role
   isActive     Boolean        @default(true)
+  authProvider String         @default("local")
+  googleId     String?        @unique
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   events       Event[]
@@ -29,24 +32,31 @@ model User {
   assignedStaff      SessionStaff[] @relation("assignedBy")
   auditLogsPerformed AuditLog[]     @relation("performedBy")
   alertsDismissed    CapacityAlert[] @relation("dismissedBy")
+  approvedEvents     Event[]        @relation("approvedBy")
 
   @@map("users")
 }
 
 model Event {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  venue       String
-  startDate   DateTime
-  endDate     DateTime
-  isArchived  Boolean  @default(false)
-  createdById String   @db.Uuid
-  createdBy   User     @relation(fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  sessions    Session[]
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  description     String?
+  venue           String
+  startDate       DateTime
+  endDate         DateTime
+  isArchived      Boolean  @default(false)
+  approvalStatus  String   @default("PENDING")
+  rejectionReason String?
+  approvedById    String?  @db.Uuid
+  approvedAt      DateTime?
+  createdById     String   @db.Uuid
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  approvedBy      User?    @relation("approvedBy", fields: [approvedById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  sessions        Session[]
 
+  @@index([approvalStatus])
   @@map("events")
 }
 

@@ -32,6 +32,7 @@ app.get('/api/health', (req, res) => {
 
 import dashboardRouter from './routes/dashboard.routes.js';
 import alertRouter from './routes/alert.routes.js';
+import adminRouter from './routes/admin.routes.js';
 
 app.use('/api/auth', authRouter);
 app.use('/api/events', eventRouter);
@@ -41,6 +42,7 @@ app.use('/api/registrations', registrationRouter);
 app.use('/api/me', meRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/alerts', alertRouter);
+app.use('/api/admin', adminRouter);
 
 app.use(errorHandler);
 
