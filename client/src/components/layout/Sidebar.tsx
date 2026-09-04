@@ -33,15 +33,17 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: { sidebarOpen: 
 
   return (
     <>
-      <div className={cn("fixed inset-0 z-20 bg-black/50 transition-opacity lg:hidden", sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none")} onClick={() => setSidebarOpen(false)} />
-      <aside className={cn("fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white border-r border-slate-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 flex flex-col", !sidebarOpen && "-translate-x-full")}>
-        <div className="h-16 flex items-center px-6 border-b border-slate-200 justify-between">
-          <span className="text-xl font-bold text-primary-600">EventFlow</span>
-          <button className="lg:hidden text-slate-500" onClick={() => setSidebarOpen(false)}>
+      <div className={cn("fixed inset-0 z-20 bg-black/60 backdrop-blur-sm transition-opacity lg:hidden", sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none")} onClick={() => setSidebarOpen(false)} />
+      <aside className={cn("fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white/65 backdrop-blur-xl border-r border-white/30 transform transition-transform duration-200 ease-in-out lg:translate-x-0 flex flex-col shadow-xl", !sidebarOpen && "-translate-x-full")}>
+        <div className="h-16 flex items-center px-6 border-b border-white/30 justify-between">
+          <span className="text-xl font-extrabold text-indigo-700 tracking-tight flex items-center gap-2">
+            <span className="bg-indigo-600 text-white p-1 rounded-lg shadow-sm">EF</span> EventFlow
+          </span>
+          <button className="lg:hidden text-slate-600" onClick={() => setSidebarOpen(false)}>
             <X size={20} />
           </button>
         </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
           {links.map((link) => {
             const Icon = link.icon;
             return (
@@ -49,8 +51,10 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: { sidebarOpen: 
                 key={link.name}
                 to={link.to}
                 className={({ isActive }) =>
-                  cn("flex flex-1 items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                    isActive ? "bg-primary-50 text-primary-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900")
+                  cn("flex flex-1 items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 border",
+                    isActive 
+                      ? "bg-white/80 text-indigo-700 border-indigo-200 shadow-md backdrop-blur-md" 
+                      : "text-slate-700 border-transparent hover:bg-white/50 hover:text-slate-900 hover:border-white/40")
                 }
                 onClick={() => setSidebarOpen(false)}
               >
@@ -59,7 +63,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: { sidebarOpen: 
                   {link.name}
                 </div>
                 {link.badge !== undefined && (
-                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
                     {link.badge}
                   </span>
                 )}
