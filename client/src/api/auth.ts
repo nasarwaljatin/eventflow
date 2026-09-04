@@ -15,6 +15,11 @@ export const logout = async (): Promise<void> => {
   await api.post('/auth/logout');
 };
 
+export const googleLogin = async (credential: string, role?: string): Promise<AuthResponse> => {
+  const { data } = await api.post('/auth/google', { credential, role });
+  return data.data;
+};
+
 export const refreshToken = async (): Promise<{ accessToken: string }> => {
   const { data } = await api.post('/auth/refresh');
   return data.data;

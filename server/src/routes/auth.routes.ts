@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { register, login, logout, refresh, getMe } from '../controllers/auth.controller.js';
+import { register, login, logout, refresh, getMe, googleLogin } from '../controllers/auth.controller.js';
 import { validate } from '../middleware/validate.js';
-import { registerSchema, loginSchema } from '../schemas/auth.schema.js';
+import { registerSchema, loginSchema, googleLoginSchema } from '../schemas/auth.schema.js';
 import { authenticate } from '../middleware/auth.js';
 import rateLimit from 'express-rate-limit';
 
@@ -15,6 +15,7 @@ const loginLimiter = rateLimit({
 
 router.post('/register', validate(registerSchema), register);
 router.post('/login', loginLimiter, validate(loginSchema), login);
+router.post('/google', validate(googleLoginSchema), googleLogin);
 router.post('/logout', authenticate, logout);
 router.post('/refresh', refresh);
 router.get('/me', authenticate, getMe);

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -23,12 +24,14 @@ type FormData = z.infer<typeof schema>;
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { register: registerAuth } = useAuth();
+  const { register: registerAuth, googleLogin } = useAuth();
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { role: 'CHECK_IN_STAFF' }
   });
+
+  const selectedRole = watch('role');
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -39,6 +42,17 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      if (credentialResponse.credential) {
+        await googleLogin(credentialResponse.credential, selectedRole);
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Google sign-up failed');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -46,7 +60,31 @@ export default function RegisterPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Account Type / Role</label>
+            <div className="mt-1">
+              <select {...register('role')} className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm font-medium text-slate-900">
+                <option value="ORGANIZER">Organizer (Create & Manage Events)</option>
+                <option value="CHECK_IN_STAFF">Check-in Staff (Scan & Manage Registrations)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Google Sign-Up */}
+          <GoogleAuthButton onSuccess={handleGoogleSuccess} text="signup_with" mode="register" />
+
+          <div>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-slate-500">Or register with email</span>
+              </div>
+            </div>
+          </div>
+
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label className="block text-sm font-medium text-slate-700">Full Name</label>
@@ -84,17 +122,6 @@ export default function RegisterPage() {
                 </button>
               </div>
               {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Role</label>
-              <div className="mt-1">
-                <select {...register('role')} className="block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm">
-                  <option value="ORGANIZER">Organizer</option>
-                  <option value="CHECK_IN_STAFF">Check-in Staff</option>
-                </select>
-                {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>}
-              </div>
             </div>
 
             <div>
