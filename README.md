@@ -4,7 +4,9 @@ A modern, full-stack event registration platform for managing multi-day conferen
 
 ## Features
 
-- **Role-based Access Control** — Organizers and check-in staff with server-enforced permissions
+- **Google SSO & Auth** — Google Sign-In (OAuth 2.0) and standard email/password authentication
+- **Admin Event Approval** — Admin workflow requiring approval before events become publicly visible
+- **Role-based Access Control** — Admin, Organizers, and Check-in staff with server-enforced permissions
 - **Event & Session Management** — Create, edit, archive/restore events with sessions and seat capacity
 - **Registration Lifecycle** — Reserved → Confirmed → Checked In with automatic expiry
 - **Race-safe Capacity** — Atomic capacity enforcement prevents overbooking
@@ -22,7 +24,7 @@ A modern, full-stack event registration platform for managing multi-day conferen
 | Backend | Node.js + Express + TypeScript |
 | ORM | Prisma |
 | Database | PostgreSQL (Supabase) |
-| Auth | JWT (access + refresh tokens) + bcrypt |
+| Auth | JWT (access + refresh tokens) + Google OAuth 2.0 + bcrypt |
 | Hosting | Vercel (frontend) + Render (backend) |
 
 ## Getting Started
@@ -65,8 +67,9 @@ cd client && npm run dev
 
 | Role | Email | Password |
 |------|-------|----------|
+| Admin | admin@eventflow.com | Admin1234! |
 | Organizer | organizer@demo.com | Demo1234! |
-| Check-in Staff | staff@demo.com | Demo1234! |
+| Check-in Staff | staff1@demo.com | Demo1234! |
 
 ## Project Structure
 

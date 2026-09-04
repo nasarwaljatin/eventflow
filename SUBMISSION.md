@@ -4,46 +4,45 @@ Fill this in and commit it. This is the first file we open.
 
 ## Links
 
-- **GitHub repository:** (N/A for local exercise)
-- **Live application:** (N/A for local exercise)
+- **GitHub repository:** https://github.com/nasarwaljatin/eventflow.git
+- **Live application:** https://eventflow-sage-ten.vercel.app
 
 ## Notes for the reviewer
 
-The server runs on port 3001 and the client on 3000. Please ensure `DATABASE_URL` is set to the provided SQLite file.
+The server runs on port 3000 and the client on 5173 (or Vercel in production).
 
 ## Demo credentials
 
 | Role | Email | Password |
 |------|-------|----------|
-| Organizer | organizer@example.com | password123 |
-| Staff | staff@example.com | password123 |
-| Attendee | attendee@example.com | password123 |
+| Admin | admin@eventflow.com | Admin1234! |
+| Organizer | organizer@demo.com | Demo1234! |
+| Check-in Staff | staff1@demo.com | Demo1234! |
 
 ## Stack
 
 | Layer | What you used | Why |
 |-------|---------------|-----|
-| Frontend | React, Vite, Tailwind CSS, React Query | Fast local dev, strong caching model, easy styling. |
-| Backend | Express, Node.js, Prisma, Zod | Lightweight, very strong TypeScript guarantees with Prisma. |
-| Database | SQLite | File-based, easiest for reviewers to run without setup. |
-| Hosting | Local | (N/A) |
+| Frontend | React, Vite, Tailwind CSS, React Query, @react-oauth/google | Fast local dev, strong caching model, easy styling, Google SSO. |
+| Backend | Express, Node.js, Prisma, Zod, google-auth-library | Lightweight, strong TypeScript guarantees with Prisma, secure Google token verification. |
+| Database | PostgreSQL (Supabase) | Scalable relational database with connection pooling. |
+| Hosting | Vercel (frontend) + Render (backend) | Automated CI/CD deployments. |
 
 ## Goal checklist
 
-Mark each honestly. Partial is fine — say what is partial.
-
 | # | Goal | Status | Notes |
 |---|------|--------|-------|
-| 1 | Database setup (Events, Sessions, Users, Registrations) | Done | Designed using Prisma |
-| 2 | Backend API (CRUD for events and sessions) | Done | Express routes and controllers built |
-| 3 | Frontend Structure (Routing, Auth Context) | Done | Uses React Router v6 |
-| 4 | Authentication (Login/Register, JWT) | Done | HttpOnly cookie-based |
-| 5 | Organizer Dashboard & Management | Done | Full CRUD and assignments |
-| 6 | Attendee Registration Flow (30m hold) | Done | Implemented hold mechanism and timer |
-| 7 | Staff Check-in Flow | Done | Staff can view assigned sessions and check in users |
-| 8 | CSV Import / Export | Done | Export works via string generation, import via `csv-parse` |
-| 9 | UI Polish (Spinners, Toasts, Confirmation Dialogs) | Done | Built custom ConfirmDialog, Skeleton, Spinner |
-| 10 | TypeScript Strictness | Done | Zero `any` where possible, `tsc --noEmit` passes cleanly. |
+| 1 | Database setup (Events, Sessions, Users, Registrations, Approval) | Done | Designed using Prisma + PostgreSQL |
+| 2 | Backend API (CRUD for events and sessions, Admin approvals) | Done | Express routes and controllers built |
+| 3 | Frontend Structure (Routing, Auth Context, Admin Dashboard) | Done | Uses React Router v6 + RoleGuard |
+| 4 | Authentication (Login/Register, JWT, Google SSO) | Done | JWT + Google OAuth 2.0 |
+| 5 | Admin Event Approval & User Role Management | Done | Admin dashboard with event approvals & user role switcher |
+| 6 | Organizer Dashboard & Management | Done | Full CRUD and staff assignments |
+| 7 | Attendee Registration Flow (30m hold) | Done | Implemented hold mechanism and timer |
+| 8 | Staff Check-in Flow | Done | Staff can view assigned sessions and check in users |
+| 9 | CSV Import / Export | Done | Export works via CSV generation, import via `csv-parse` |
+| 10 | UI Polish (Spinners, Toasts, Confirmation Dialogs, Setup Modal) | Done | Built custom ConfirmDialog, GoogleAuthButton setup modal |
+| 11 | TypeScript Strictness | Done | Strict type-checking, `tsc --noEmit` passes cleanly. |
 
 ## How much time did you actually spend?
 
